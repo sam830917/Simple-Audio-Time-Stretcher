@@ -6,14 +6,16 @@
 <link rel="stylesheet" href="lib/doublerangeslider/doublerangeslider.css" />
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/greghub/green-audio-player/dist/css/green-audio-player.min.css" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="lib/alertify/css/alertify.css"/>
 
 <!--JS files-->
 <script type="text/javascript" src="lib/jQuery-3.3.1/jquery-3.3.1.min.js"></script>
 <script type="text/javascript" src="lib/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/greghub/green-audio-player/dist/js/green-audio-player.min.js"></script>
-
+<script type="text/javascript" src="lib/alertify/js/alertify.js"></script>
 
 <title>SamChu - Audio Time Stretcher</title>
+
 <style>
 
 .green-audio-player {
@@ -44,7 +46,7 @@
 		<div class="card-body">
 			<div class="row mt-3">
 				<div class="col">
-					<input type="file" class="form-control" id="AudioFile" />
+					<input type="file" class="form-control" id="AudioFile" accept="audio/*" />
 				</div>
 			</div>
 			<div class="row mt-3">
@@ -145,7 +147,11 @@
 	});
 	
 	$("#AudioFile").change(function(e){
-		if (!$("#AudioFile").prop('files').length) return;
+		if (!$("#AudioFile").prop('files').length) 
+		{
+			alertify.error('Failed to add Audio!');
+			return;
+		}
 		
 		var audioFile = $("#AudioFile").prop('files')[0];
 		const urlObj = URL.createObjectURL(audioFile);
@@ -154,8 +160,8 @@
         el.src = urlObj;
         el.onloadedmetadata = () => {
 			UpdateSliderRange(0, parseInt($("#AudioSource")[0].duration));
+			alertify.success('Added Audio Successfully!');
         };
-		
 	});
 	
 	$(document).on('input', '#AudioSpeed', function() {
