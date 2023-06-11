@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--CSS files-->
+<link rel="stylesheet" href="lib/bootstrap/css/bootstrap.css" />
+<link rel="stylesheet" href="lib/doublerangeslider/doublerangeslider.css" />
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/greghub/green-audio-player/dist/css/green-audio-player.min.css">
+
+<!--JS files-->
+<script type="text/javascript" src="lib/jQuery-3.3.1/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="lib/bootstrap/js/bootstrap.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/greghub/green-audio-player/dist/js/green-audio-player.min.js"></script>
+
+
+<title>SamChu - Audio Time Stretcher</title>
+<style>
+
+.green-audio-player {
+	width: 100%;
+	box-shadow: none;
+	border: 1px solid #ced4da;
+}
+.green-audio-player .slider .gap-progress .pin {
+	background-color: #1e90ff;
+}
+.green-audio-player .slider .gap-progress {
+	background-color: #1e90ff;
+}
+.green-audio-player .volume .volume__button.open path {
+	fill: #1e90ff;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container ">
+	<div class="card mt-3">
+		<div class="card-header">
+			Audio Source
+		</div>
+		<div class="card-body">
+			<div class="row mt-3">
+				<div class="col">
+					<input type="file" class="form-control" id="AudioFile" />
+				</div>
+			</div>
+			<div class="row mt-3">
+				<div class="col">
+					<div class="AudioPlayer player-accessible">
+						<audio id="AudioSource" ontimeupdate="ClampAudio()"></audio>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="card mt-3">
+		<div class="card-header">
+			Speed
+		</div>
+		<div class="card-body">
+			<div class="row mt-3">
+				<div class="col-1">
+					<output id="SpeedOutput">100%</output>
+				</div>
+				<div class="col-11">
+					<input id="AudioSpeed" class="form-range" type="range" min="10" max="200" value="100">
+				</div>
+			</div>
+			<div class="row mt-3">
+				<div class="col">
+					<button type="button" class="btn btn-primary" onclick="ChangeSpeed(-10, false)">-10</button>
+					<button type="button" class="btn btn-primary" onclick="ChangeSpeed(-5, false)">-5</button>
+					<button type="button" class="btn btn-primary" onclick="ChangeSpeed(100, true)">100%</button>
+					<button type="button" class="btn btn-primary" onclick="ChangeSpeed(5, false)">+5</button>
+					<button type="button" class="btn btn-primary" onclick="ChangeSpeed(10, false)">+10</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="card mt-3">
+		<div class="card-header">
+			Clamp
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<div class="col-1">
+					<div class="span12 float-end" id="RangeText1">
+						0
+					</div>
+				</div>
+				<div class="col-10">
+					<div class="wrapper">
+						<div class="container" id="SliderContainer">
+							<div class="slider-track" id="SliderTrack"></div>
+							<input class="double-range-slider" type="range" min="0" max="1" value="0" id="Slider1" oninput="UpdateSlideOne()">
+							<input class="double-range-slider" type="range" min="0" max="1" value="1" id="Slider2" oninput="UpdateSlideTwo()">
+						</div>
+					</div>
+				</div>
+				<div class="col-1">
+					<div class="span12" id="RangeText2">
+						100
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script>
+
+	document.addEventListener('DOMContentLoaded', function() { 
+		GreenAudioPlayer.init({
+			selector: '.AudioPlayer',
+			stopOthersOnPlay: true,
+		});
+	});
+	
+	$(document).keydown(function(event) {
+		if (event.which === 32)
+		{
+			document.activeElement.blur();
+			$(".play-pause-btn")[0].click();
+		}
+		// left arrow
+		if (event.which === 37)
+		{
+			document.activeElement.blur();
+			$("#AudioSource")[0].currentTime = $("#AudioSource")[0].currentTime - 3;
+		}
+		// right arrow
+		if (event.which === 39)
+		{
+			document.activeElement.blur();
+			$("#AudioSource")[0].currentTime = $("#AudioSource")[0].currentTime + 3;
+		}
+	});
+	
+	$("#AudioFile").change(function(e){
+		if (!$("#AudioFile").prop('files').length) return;
+		
+		var audioFile = $("#AudioFile").prop('files')[0];
+		const urlObj = URL.createObjectURL(audioFile);
+		$("#AudioSource").attr("src", urlObj);
+		var el = document.createElement("audio");
+        el.src = urlObj;
+        el.onloadedmetadata = () => {
+			UpdateSliderRange(0, parseInt($("#AudioSource")[0].duration));
+        };
+		
+	});
+	
+	$(document).on('input', '#AudioSpeed', function() {
+		$('#SpeedOutput').html($(this).val() + "%");
+		// playbackRate 1 equals normal speed
+		$("#AudioSource")[0].playbackRate = $(this).val() / 100;
+	});
+	
+	function ChangeSpeed(speed, isAbsolute)
+	{
+		if (isAbsolute)
+		{
+			$("#AudioSpeed").val(speed);
+		}
+		else
+		{
+			$("#AudioSpeed").val(parseInt($("#AudioSpeed").val()) + speed);
+		}
+		$('#SpeedOutput').html($("#AudioSpeed").val() + "%");
+		// playbackRate 1 equals normal speed
+		$("#AudioSource")[0].playbackRate = $("#AudioSpeed").val() / 100;
+	}
+	
+	window.onload = function()
+	{
+		UpdateSlideOne();
+		UpdateSlideTwo();
+	}
+
+	let sliderOne = document.getElementById("Slider1");
+	let sliderTwo = document.getElementById("Slider2");
+	let displayValOne = document.getElementById("RangeText1");
+	let displayValTwo = document.getElementById("RangeText2");
+	let minGap = 0;
+	let sliderTrack = document.getElementById("SliderTrack");
+	let audioSource = document.getElementById("AudioSource");
+
+	function UpdateSlideOne()
+	{
+		if(parseInt(sliderTwo.value) - parseInt(sliderOne.value) <= minGap)
+		{
+			sliderOne.value = parseInt(sliderTwo.value) - minGap;
+		}
+		displayValOne.textContent = new Date(sliderOne.value * 1000).toISOString().substring(14, 19);
+		FillColor();
+		ClampAudio();
+	}
+	
+	function UpdateSlideTwo()
+	{
+		if(parseInt(sliderTwo.value) - parseInt(sliderOne.value) <= minGap)
+		{
+			sliderTwo.value = parseInt(sliderOne.value) + minGap;
+		}
+		displayValTwo.textContent = new Date(sliderTwo.value * 1000).toISOString().substring(14, 19);
+		FillColor();
+		ClampAudio();
+	}
+	
+	function FillColor()
+	{
+		percent1 = (sliderOne.value / sliderOne.max) * 100;
+		percent2 = (sliderTwo.value / sliderOne.max) * 100;
+		sliderTrack.style.background = `linear-gradient(to right, #dadae5 ${percent1}% , #3264fe ${percent1}% , #3264fe ${percent2}%, #dadae5 ${percent2}%)`;
+	}
+	
+	function UpdateSliderRange(min, max)
+	{
+		sliderOne.max = max;
+		sliderOne.min = min;
+		sliderTwo.max = max;
+		sliderTwo.min = min;
+		sliderOne.value = min;
+		sliderTwo.value = max;
+		UpdateSlideOne();
+		UpdateSlideTwo();
+	}
+	
+	function ClampAudio()
+	{
+		if ($("#AudioSource")[0].currentTime > parseInt(sliderTwo.value) + 1)
+		{
+			$("#AudioSource")[0].pause();
+			$("#AudioSource")[0].currentTime = parseInt(sliderOne.value);
+		}
+		else if ($("#AudioSource")[0].currentTime < parseInt(sliderOne.value))
+		{
+			$("#AudioSource")[0].pause();
+			$("#AudioSource")[0].currentTime = parseInt(sliderOne.value);
+		}
+	}
+
+</script>
+</body>
+</html>
