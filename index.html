@@ -84,7 +84,7 @@
 	</div>
 	<div class="card mt-3">
 		<div class="card-header">
-			Clamp
+			Play Range
 		</div>
 		<div class="card-body">
 			<div class="row">
@@ -244,12 +244,14 @@
 	{
 		if ($("#AudioSource")[0].currentTime > parseInt(sliderTwo.value) + 1)
 		{
-			$("#AudioSource")[0].pause();
 			$("#AudioSource")[0].currentTime = parseInt(sliderOne.value);
+			if (!$("#AudioSource")[0].paused)
+			{
+				$(".play-pause-btn")[0].click();
+			}
 		}
 		else if ($("#AudioSource")[0].currentTime < parseInt(sliderOne.value))
 		{
-			$("#AudioSource")[0].pause();
 			$("#AudioSource")[0].currentTime = parseInt(sliderOne.value);
 		}
 	}
