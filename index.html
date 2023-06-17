@@ -229,10 +229,31 @@
 				}
 				break;
 			}
+			// enter
+			case 10:
+			case 13:
+			{
+				if ($("#YTLink").val() != "")
+				{
+					LoadYTVideo();
+				}
+				break;
+			}
 			default:
 			break;
 		}
 	});
+	
+	document.body.onpaste = e => 
+	{
+		var pastedData = e.clipboardData.getData('text');
+		if (pastedData != "")
+		{
+			$("#YTLink").val(pastedData);
+			LoadYTVideo();
+			e.preventDefault();
+		}
+	};
 	
 	$("#AudioFile").change(function(e){
 		if (!$("#AudioFile").prop('files').length) 
@@ -428,6 +449,12 @@
 	
 	function OnPlayerReady(event)
 	{
+		if (YTPlayer.getDuration() == 0)
+		{
+			alertify.error('Failed to add the YouTube video!');
+			return;
+		}
+		
 		$("#AudioSourceGroup").hide();
 		$("#YTSourceGroup").show();
 		CurrentAudioSource = eAudioSource.YOUTUBE;
