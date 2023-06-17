@@ -50,12 +50,12 @@
 					<input type="file" class="form-control" id="AudioFile" accept="audio/*" />
 				</div>
 			</div>
-			<div class="row mt-3" hidden>
+			<div class="row mt-3">
 				<div class="col">
 				<p class="text-center">OR</p>
 				</div>
 			</div>
-			<div class="row" hidden>
+			<div class="row">
 				<div class="col">
 					<div class="input-group mb-3">
 						<div class="input-group-prepend">
@@ -157,7 +157,7 @@
 	$(document).ready( function () 
 	{
 		$("#AudioSourceGroup").hide();
-		//$("#YTSourceGroup").hide();
+		$("#YTSourceGroup").hide();
 	});
 	
 	document.addEventListener('DOMContentLoaded', function() { 
@@ -168,6 +168,7 @@
 	});
 	
 	let AudioSource;
+	let AudioSpeed = document.getElementById("AudioSpeed");
 	
 	$(document).keydown(function(event) 
 	{
@@ -176,17 +177,27 @@
 			// space bar
 			case 32:
 			{
+				document.activeElement.blur();
 				if (CurrentAudioSource == eAudioSource.LOCAL)
 				{
-					document.activeElement.blur();
 					$(".play-pause-btn")[0].click();
 				}
 				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
 				{
-					var iframe = document.getElementById("YTPlayer");
-					var elmnt = iframe.contentWindow.document.getElementsByClassName("ytp-button")[0];
-					console.log(elmnt);
+					if (PlayerState == eYTState.UNSTARTED)
+					{
+						YTPlayer.playVideo();
+					}
+					else if (PlayerState == eYTState.PLAYING)
+					{
+						YTPlayer.pauseVideo();
+					}
+					else if (PlayerState == eYTState.PAUSED)
+					{
+						YTPlayer.playVideo();
+					}
 				}
+				event.preventDefault();
 				break;
 			}
 			// left arrow
@@ -223,7 +234,7 @@
 	$("#AudioFile").change(function(e){
 		if (!$("#AudioFile").prop('files').length) 
 		{
-			alertify.error('Failed to add Audio!');
+			alertify.error('Failed to add the audio!');
 			return;
 		}
 		
@@ -238,14 +249,17 @@
 			$("#YTSourceGroup").hide();
 			UpdateSliderRange(0, parseInt(AudioSource.duration));
 			CurrentAudioSource = eAudioSource.LOCAL;
-			alertify.success('Added Audio Successfully!');
+			alertify.success('Added an audio successfully!');
+			AudioSpeed.min = 10;
+			AudioSpeed.max = 200;
+			AudioSpeed.value = 100;
+			AudioSpeed.step = 1;
         };
 	});
 	
-	$(document).on('input', '#AudioSpeed', function() {
-		$('#SpeedOutput').html($(this).val() + "%");
-		// playbackRate 1 equals normal speed
-		AudioSource.playbackRate = $(this).val() / 100;
+	$(document).on('input', '#AudioSpeed', function()
+	{
+		ChangeSpeed(parseInt($(this).val()), true);
 	});
 	
 	function ChangeSpeed(speed, isAbsolute)
@@ -260,7 +274,16 @@
 		}
 		$('#SpeedOutput').html($("#AudioSpeed").val() + "%");
 		// playbackRate 1 equals normal speed
-		AudioSource.playbackRate = $("#AudioSpeed").val() / 100;
+		var playRate = $("#AudioSpeed").val() / 100;
+		
+		if (CurrentAudioSource == eAudioSource.LOCAL)
+		{
+			AudioSource.playbackRate = playRate;
+		}
+		else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+		{
+			YTPlayer.setPlaybackRate(playRate);
+		}
 	}
 
 	let sliderOne = document.getElementById("Slider1");
@@ -331,6 +354,16 @@
 	// ----------------------------------Youtube part--------------------------------------
 	
 	var YTPlayer;
+	const eYTState = 
+	{
+		UNSTARTED: "UNSTARTED",
+		ENDED: "ENDED",
+		PLAYING: "PLAYING",
+		PAUSED: "PAUSED",
+		BUFFERING: "BUFFERING",
+		CUED: "CUED",
+	};
+	var PlayerState = eYTState.UNSTARTED;
 	
 	// https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url?page=1&tab=votes#tab-top
 	function YoutubeUrlParser(url)
@@ -342,16 +375,66 @@
 	
 	function LoadYTVideo()
 	{
-		$("#AudioSourceGroup").hide();
-		$("#YTSourceGroup").show();
-		
-		CurrentAudioSource = eAudioSource.YOUTUBE;
 		var ytLink = $("#YTLink").val();
+		if (YTPlayer)
+			YTPlayer.destroy();
+			
 		YTPlayer = new YT.Player('YTPlayer', {
 			height: '360',
 			width: '640',
-			videoId: YoutubeUrlParser(ytLink)
+			videoId: YoutubeUrlParser(ytLink),
+			events: {
+				'onReady': OnPlayerReady,
+				'onStateChange': OnPlayerStateChange,
+				'onError': OnPlayerError
+			}
 		});
+	}
+	
+	function OnPlayerReady(event)
+	{
+		$("#AudioSourceGroup").hide();
+		$("#YTSourceGroup").show();
+		CurrentAudioSource = eAudioSource.YOUTUBE;
+		AudioSpeed.min = 25;
+		AudioSpeed.max = 200;
+		AudioSpeed.value = 100;
+		AudioSpeed.step = 5;
+		
+		alertify.success('Added a YouTube video successfully!');
+	}
+	
+	function OnPlayerStateChange(event)
+	{
+		var playerState = event.data;
+		switch (playerState)
+		{
+		case -1:
+		PlayerState = eYTState.UNSTARTED;
+		break;
+		case 0:
+		PlayerState = eYTState.ENDED;
+		break;
+		case 1:
+		PlayerState = eYTState.PLAYING;
+		break;
+		case 2:
+		PlayerState = eYTState.PAUSED;
+		break;
+		case 3:
+		PlayerState = eYTState.BUFFERING;
+		break;
+		case 5:
+		PlayerState = eYTState.CUED;
+		break;
+		default:
+		break;
+		}
+	}
+	
+	function OnPlayerError(event)
+	{
+		alertify.error('Failed to add the YouTube video!');
 	}
 
 </script>
