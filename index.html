@@ -191,17 +191,15 @@
 				}
 				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
 				{
-					if (PlayerState == eYTState.UNSTARTED)
+					if (PlayerState == eYTState.UNSTARTED || 
+						PlayerState == eYTState.PAUSED || 
+						PlayerState == eYTState.ENDED)
 					{
 						YTPlayer.playVideo();
 					}
 					else if (PlayerState == eYTState.PLAYING)
 					{
 						YTPlayer.pauseVideo();
-					}
-					else if (PlayerState == eYTState.PAUSED)
-					{
-						YTPlayer.playVideo();
 					}
 				}
 				event.preventDefault();
