@@ -210,6 +210,7 @@
 				}
 				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
 				{
+					YTPlayer.seekTo(YTPlayer.getCurrentTime() - 3);
 				}
 				break;
 			}
@@ -223,6 +224,7 @@
 				}
 				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
 				{
+					YTPlayer.seekTo(YTPlayer.getCurrentTime() + 3);
 				}
 				break;
 			}
@@ -337,6 +339,18 @@
 	
 	function ClampAudio()
 	{
+		if (CurrentAudioSource == eAudioSource.LOCAL)
+		{
+			ClampLocalAudio();
+		}
+		else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+		{
+			ClampYTPlayer();
+		}
+	}
+	
+	function ClampLocalAudio()
+	{
 		if (AudioSource.currentTime > parseInt(sliderTwo.value) + 1)
 		{
 			AudioSource.currentTime = parseInt(sliderOne.value);
@@ -349,6 +363,10 @@
 		{
 			AudioSource.currentTime = parseInt(sliderOne.value);
 		}
+	}
+	
+	function ClampYTPlayer()
+	{
 	}
 	
 	// ----------------------------------Youtube part--------------------------------------
@@ -400,6 +418,7 @@
 		AudioSpeed.max = 200;
 		AudioSpeed.value = 100;
 		AudioSpeed.step = 5;
+		UpdateSliderRange(0, YTPlayer.getDuration());
 		
 		alertify.success('Added a YouTube video successfully!');
 	}
