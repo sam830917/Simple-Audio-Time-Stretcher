@@ -126,6 +126,8 @@
 		});
 	});
 	
+	let AudioSource;
+	
 	$(document).keydown(function(event) {
 		if (event.which === 32)
 		{
@@ -136,13 +138,13 @@
 		if (event.which === 37)
 		{
 			document.activeElement.blur();
-			$("#AudioSource")[0].currentTime = $("#AudioSource")[0].currentTime - 3;
+			AudioSource.currentTime = AudioSource.currentTime - 3;
 		}
 		// right arrow
 		if (event.which === 39)
 		{
 			document.activeElement.blur();
-			$("#AudioSource")[0].currentTime = $("#AudioSource")[0].currentTime + 3;
+			AudioSource.currentTime = AudioSource.currentTime + 3;
 		}
 	});
 	
@@ -159,7 +161,8 @@
 		var el = document.createElement("audio");
         el.src = urlObj;
         el.onloadedmetadata = () => {
-			UpdateSliderRange(0, parseInt($("#AudioSource")[0].duration));
+			AudioSource = $("#AudioSource")[0];
+			UpdateSliderRange(0, parseInt(AudioSource.duration));
 			alertify.success('Added Audio Successfully!');
         };
 	});
@@ -167,7 +170,7 @@
 	$(document).on('input', '#AudioSpeed', function() {
 		$('#SpeedOutput').html($(this).val() + "%");
 		// playbackRate 1 equals normal speed
-		$("#AudioSource")[0].playbackRate = $(this).val() / 100;
+		AudioSource.playbackRate = $(this).val() / 100;
 	});
 	
 	function ChangeSpeed(speed, isAbsolute)
@@ -182,7 +185,7 @@
 		}
 		$('#SpeedOutput').html($("#AudioSpeed").val() + "%");
 		// playbackRate 1 equals normal speed
-		$("#AudioSource")[0].playbackRate = $("#AudioSpeed").val() / 100;
+		AudioSource.playbackRate = $("#AudioSpeed").val() / 100;
 	}
 	
 	window.onload = function()
@@ -242,17 +245,17 @@
 	
 	function ClampAudio()
 	{
-		if ($("#AudioSource")[0].currentTime > parseInt(sliderTwo.value) + 1)
+		if (AudioSource.currentTime > parseInt(sliderTwo.value) + 1)
 		{
-			$("#AudioSource")[0].currentTime = parseInt(sliderOne.value);
-			if (!$("#AudioSource")[0].paused)
+			AudioSource.currentTime = parseInt(sliderOne.value);
+			if (!AudioSource.paused)
 			{
 				$(".play-pause-btn")[0].click();
 			}
 		}
-		else if ($("#AudioSource")[0].currentTime < parseInt(sliderOne.value))
+		else if (AudioSource.currentTime < parseInt(sliderOne.value))
 		{
-			$("#AudioSource")[0].currentTime = parseInt(sliderOne.value);
+			AudioSource.currentTime = parseInt(sliderOne.value);
 		}
 	}
 
