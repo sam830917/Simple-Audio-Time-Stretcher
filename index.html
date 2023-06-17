@@ -14,6 +14,7 @@
 <script src="https://cdn.jsdelivr.net/gh/greghub/green-audio-player/dist/js/green-audio-player.min.js"></script>
 <script type="text/javascript" src="lib/alertify/js/alertify.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
 
 <title>SamChu - Simple Audio Time Stretcher</title>
 
@@ -158,6 +159,11 @@
 	{
 		$("#AudioSourceGroup").hide();
 		$("#YTSourceGroup").hide();
+		var link = Cookies.get('YTLink');
+		if (link != "")
+		{
+			$("#YTLink").val(link);
+		}
 	});
 	
 	document.addEventListener('DOMContentLoaded', function() { 
@@ -464,6 +470,7 @@
 		AudioSpeed.step = 5;
 		ChangeSpeed(100, true);
 		UpdateSliderRange(0, YTPlayer.getDuration());
+		Cookies.set('YTLink', $("#YTLink").val());
 		// setup tick timer
 		function UpdateTime() 
 		{
