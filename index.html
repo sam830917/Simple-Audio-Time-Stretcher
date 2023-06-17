@@ -13,6 +13,7 @@
 <script type="text/javascript" src="lib/bootstrap/js/bootstrap.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/greghub/green-audio-player/dist/js/green-audio-player.min.js"></script>
 <script type="text/javascript" src="lib/alertify/js/alertify.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 
 <title>SamChu - Simple Audio Time Stretcher</title>
 
@@ -51,9 +52,29 @@
 			</div>
 			<div class="row mt-3">
 				<div class="col">
+				<p class="text-center">OR</p>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col">
+					<div class="input-group mb-3">
+						<div class="input-group-prepend">
+							<button class="btn btn-outline-primary" type="button" onclick="LoadYTVideo()">Load</button>
+						</div>
+						<input type="text" id="YTLink" class="form-control" placeholder="Youtube Link" aria-label="Link" aria-describedby="basic-addon1">
+					</div>
+				</div>
+			</div>
+			<div class="row mt-3" id="AudioSourceGroup">
+				<div class="col">
 					<div class="AudioPlayer">
 						<audio id="AudioSource" ontimeupdate="ClampAudio()"></audio>
 					</div>
+				</div>
+			</div>
+			<div class="row mt-3" id="YTSourceGroup">
+				<div class="col">
+					<div id="YTPlayer"></div>
 				</div>
 			</div>
 		</div>
@@ -118,7 +139,27 @@
 </div>
 
 <script>
+	
+	const eAudioSource = 
+	{
+		NONE: "NONE",
+		LOCAL: "LOCAL",
+		YOUTUBE: "YOUTUBE",
+	};
+	let CurrentAudioSource = eAudioSource.NONE;
 
+	window.onload = function()
+	{
+		UpdateSlideOne();
+		UpdateSlideTwo();
+	}
+	
+	$(document).ready( function () 
+	{
+		$("#AudioSourceGroup").hide();
+		//$("#YTSourceGroup").hide();
+	});
+	
 	document.addEventListener('DOMContentLoaded', function() { 
 		GreenAudioPlayer.init({
 			selector: '.AudioPlayer',
@@ -128,23 +169,54 @@
 	
 	let AudioSource;
 	
-	$(document).keydown(function(event) {
-		if (event.which === 32)
+	$(document).keydown(function(event) 
+	{
+		switch(event.which) 
 		{
-			document.activeElement.blur();
-			$(".play-pause-btn")[0].click();
-		}
-		// left arrow
-		if (event.which === 37)
-		{
-			document.activeElement.blur();
-			AudioSource.currentTime = AudioSource.currentTime - 3;
-		}
-		// right arrow
-		if (event.which === 39)
-		{
-			document.activeElement.blur();
-			AudioSource.currentTime = AudioSource.currentTime + 3;
+			// space bar
+			case 32:
+			{
+				if (CurrentAudioSource == eAudioSource.LOCAL)
+				{
+					document.activeElement.blur();
+					$(".play-pause-btn")[0].click();
+				}
+				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+				{
+					var iframe = document.getElementById("YTPlayer");
+					var elmnt = iframe.contentWindow.document.getElementsByClassName("ytp-button")[0];
+					console.log(elmnt);
+				}
+				break;
+			}
+			// left arrow
+			case 37:
+			{
+				if (CurrentAudioSource == eAudioSource.LOCAL)
+				{
+					document.activeElement.blur();
+					AudioSource.currentTime = AudioSource.currentTime - 3;
+				}
+				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+				{
+				}
+				break;
+			}
+			// right arrow
+			case 39:
+			{
+				if (CurrentAudioSource == eAudioSource.LOCAL)
+				{
+					document.activeElement.blur();
+					AudioSource.currentTime = AudioSource.currentTime + 3;
+				}
+				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+				{
+				}
+				break;
+			}
+			default:
+			break;
 		}
 	});
 	
@@ -162,7 +234,10 @@
         el.src = urlObj;
         el.onloadedmetadata = () => {
 			AudioSource = $("#AudioSource")[0];
+			$("#AudioSourceGroup").show();
+			$("#YTSourceGroup").hide();
 			UpdateSliderRange(0, parseInt(AudioSource.duration));
+			CurrentAudioSource = eAudioSource.LOCAL;
 			alertify.success('Added Audio Successfully!');
         };
 	});
@@ -186,12 +261,6 @@
 		$('#SpeedOutput').html($("#AudioSpeed").val() + "%");
 		// playbackRate 1 equals normal speed
 		AudioSource.playbackRate = $("#AudioSpeed").val() / 100;
-	}
-	
-	window.onload = function()
-	{
-		UpdateSlideOne();
-		UpdateSlideTwo();
 	}
 
 	let sliderOne = document.getElementById("Slider1");
@@ -257,6 +326,32 @@
 		{
 			AudioSource.currentTime = parseInt(sliderOne.value);
 		}
+	}
+	
+	// ----------------------------------Youtube part--------------------------------------
+	
+	var YTPlayer;
+	
+	// https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url?page=1&tab=votes#tab-top
+	function YoutubeUrlParser(url)
+	{
+		var regExp = /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/;
+		var match = url.match(regExp);
+		return (match&&match[1].length==11)? match[1] : false;
+	}
+	
+	function LoadYTVideo()
+	{
+		$("#AudioSourceGroup").hide();
+		$("#YTSourceGroup").show();
+		
+		CurrentAudioSource = eAudioSource.YOUTUBE;
+		var ytLink = $("#YTLink").val();
+		YTPlayer = new YT.Player('YTPlayer', {
+			height: '360',
+			width: '640',
+			videoId: YoutubeUrlParser(ytLink)
+		});
 	}
 
 </script>
