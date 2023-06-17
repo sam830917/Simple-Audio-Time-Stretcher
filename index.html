@@ -169,6 +169,7 @@
 	
 	let AudioSource;
 	let AudioSpeed = document.getElementById("AudioSpeed");
+	const SkipStep = 3;
 	
 	$(document).keydown(function(event) 
 	{
@@ -206,11 +207,11 @@
 				if (CurrentAudioSource == eAudioSource.LOCAL)
 				{
 					document.activeElement.blur();
-					AudioSource.currentTime = AudioSource.currentTime - 3;
+					AudioSource.currentTime = AudioSource.currentTime - SkipStep;
 				}
 				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
 				{
-					YTPlayer.seekTo(YTPlayer.getCurrentTime() - 3);
+					YTPlayer.seekTo(YTPlayer.getCurrentTime() - SkipStep);
 				}
 				break;
 			}
@@ -220,11 +221,11 @@
 				if (CurrentAudioSource == eAudioSource.LOCAL)
 				{
 					document.activeElement.blur();
-					AudioSource.currentTime = AudioSource.currentTime + 3;
+					AudioSource.currentTime = AudioSource.currentTime + SkipStep;
 				}
 				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
 				{
-					YTPlayer.seekTo(YTPlayer.getCurrentTime() + 3);
+					YTPlayer.seekTo(YTPlayer.getCurrentTime() + SkipStep);
 				}
 				break;
 			}
@@ -251,11 +252,13 @@
 			$("#YTSourceGroup").hide();
 			UpdateSliderRange(0, parseInt(AudioSource.duration));
 			CurrentAudioSource = eAudioSource.LOCAL;
-			alertify.success('Added an audio successfully!');
 			AudioSpeed.min = 10;
 			AudioSpeed.max = 200;
 			AudioSpeed.value = 100;
 			AudioSpeed.step = 1;
+			ChangeSpeed(100, true);
+			
+			alertify.success('Added an audio successfully!');
         };
 	});
 	
@@ -367,6 +370,15 @@
 	
 	function ClampYTPlayer()
 	{
+		if (YTPlayer.getCurrentTime() > parseInt(sliderTwo.value) + 1)
+		{
+			YTPlayer.seekTo(parseInt(sliderOne.value));
+			YTPlayer.pauseVideo();
+		}
+		else if (YTPlayer.getCurrentTime() < parseInt(sliderOne.value))
+		{
+			YTPlayer.seekTo(parseInt(sliderOne.value));
+		}
 	}
 	
 	// ----------------------------------Youtube part--------------------------------------
@@ -374,14 +386,16 @@
 	var YTPlayer;
 	const eYTState = 
 	{
-		UNSTARTED: "UNSTARTED",
-		ENDED: "ENDED",
-		PLAYING: "PLAYING",
-		PAUSED: "PAUSED",
-		BUFFERING: "BUFFERING",
-		CUED: "CUED",
+		UNSTARTED: -1,
+		ENDED: 0,
+		PLAYING: 1,
+		PAUSED: 2,
+		BUFFERING: 3,
+		CUED: 5,
 	};
 	var PlayerState = eYTState.UNSTARTED;
+	var Videotime = 0;
+	var Timeupdater = null;
 	
 	// https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url?page=1&tab=votes#tab-top
 	function YoutubeUrlParser(url)
@@ -395,7 +409,10 @@
 	{
 		var ytLink = $("#YTLink").val();
 		if (YTPlayer)
+		{
+			clearInterval(Timeupdater);
 			YTPlayer.destroy();
+		}
 			
 		YTPlayer = new YT.Player('YTPlayer', {
 			height: '360',
@@ -418,9 +435,29 @@
 		AudioSpeed.max = 200;
 		AudioSpeed.value = 100;
 		AudioSpeed.step = 5;
+		ChangeSpeed(100, true);
 		UpdateSliderRange(0, YTPlayer.getDuration());
+		// setup tick timer
+		function UpdateTime() 
+		{
+			var oldTime = Videotime;
+			if(YTPlayer && YTPlayer.getCurrentTime)
+			{
+				Videotime = YTPlayer.getCurrentTime();
+			}
+			if(Videotime !== oldTime)
+			{
+				OnPlayerProgress(Videotime);
+			}
+		}
+		Timeupdater = setInterval(UpdateTime, 200);
 		
 		alertify.success('Added a YouTube video successfully!');
+	}
+	
+	function OnPlayerProgress(Videotime)
+	{
+		ClampYTPlayer();
 	}
 	
 	function OnPlayerStateChange(event)
