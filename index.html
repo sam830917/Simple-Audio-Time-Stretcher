@@ -7,6 +7,7 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/greghub/green-audio-player/dist/css/green-audio-player.min.css" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 <link rel="stylesheet" type="text/css" href="lib/alertify/css/alertify.css"/>
+<link rel="stylesheet" href="lib/keyboard-css/css/main.min.css" />
 
 <!--JS files-->
 <script type="text/javascript" src="lib/jQuery-3.3.1/jquery-3.3.1.min.js"></script>
@@ -133,6 +134,29 @@
 		</div>
 	</div>
 	<div class="card mt-3">
+		<div class="card-header">
+			Control Panel
+		</div>
+		<div class="card-body">
+			<div class="row mt-3">
+				<div class="col text-center">
+					<button class="kbc-button kbc-button-primary kbc-button-lg" onclick="OnPressBackwardButton()"><i class="fa-solid fa-backward"></i></button>
+					<button class="kbc-button kbc-button-primary kbc-button-lg" onclick="OnTogglePlayButton()">
+						<i class="fa-solid fa-play"></i><i class="fa-solid fa-pause"></i>
+					</button>
+					<button class="kbc-button kbc-button-primary kbc-button-lg" onclick="OnPressForwardButton()"><i class="fa-solid fa-forward"></i></button>
+				</div>
+			</div>
+			<div class="row mt-3 text-center">
+				<label class="col-sm-2 col-form-label">Play Delay</label>
+				<div class="col text-center">
+					<input type="number" class="form-control" id="inputPlayDelay" min="0" value="0.0" placeholder="Delay">
+				</div>
+				<label class="col-sm-2 col-form-label"><div class="bg-success text-white" id="PlayTimer">0.0</div></label>
+			</div>
+		</div>
+	</div>
+	<div class="card mt-3">
 		<div class="card-header text-center">
 			<a href="https://github.com/sam830917/Simple-Audio-Time-Stretcher" target="_blank"><i class="fab fa-github fa-5x"></i></a>
 		</div>
@@ -184,53 +208,20 @@
 			// space bar
 			case 32:
 			{
-				document.activeElement.blur();
-				if (CurrentAudioSource == eAudioSource.LOCAL)
-				{
-					$(".play-pause-btn")[0].click();
-				}
-				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
-				{
-					if (PlayerState == eYTState.UNSTARTED || 
-						PlayerState == eYTState.PAUSED || 
-						PlayerState == eYTState.ENDED)
-					{
-						YTPlayer.playVideo();
-					}
-					else if (PlayerState == eYTState.PLAYING)
-					{
-						YTPlayer.pauseVideo();
-					}
-				}
+				OnTogglePlayButton();
 				event.preventDefault();
 				break;
 			}
 			// left arrow
 			case 37:
 			{
-				if (CurrentAudioSource == eAudioSource.LOCAL)
-				{
-					document.activeElement.blur();
-					AudioSource.currentTime = AudioSource.currentTime - SkipStep;
-				}
-				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
-				{
-					YTPlayer.seekTo(YTPlayer.getCurrentTime() - SkipStep);
-				}
+				OnPressBackwardButton();
 				break;
 			}
 			// right arrow
 			case 39:
 			{
-				if (CurrentAudioSource == eAudioSource.LOCAL)
-				{
-					document.activeElement.blur();
-					AudioSource.currentTime = AudioSource.currentTime + SkipStep;
-				}
-				else if (CurrentAudioSource == eAudioSource.YOUTUBE)
-				{
-					YTPlayer.seekTo(YTPlayer.getCurrentTime() + SkipStep);
-				}
+				OnPressForwardButton();
 				break;
 			}
 			// enter
@@ -523,6 +514,119 @@
 	function OnPlayerError(event)
 	{
 		alertify.error('Failed to add the YouTube video!');
+	}
+	
+	// -----------------------------Control Panel-----------------------------
+	var timeLeft = 0;
+	var timerId = 0;
+	function OnTogglePlayButton()
+	{
+		document.activeElement.blur();
+		var startTimer = false;
+		
+		if (CurrentAudioSource == eAudioSource.LOCAL && AudioSource.paused)
+		{
+			startTimer = true;
+		}
+		else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+		{
+			if (PlayerState == eYTState.UNSTARTED || 
+				PlayerState == eYTState.PAUSED || 
+				PlayerState == eYTState.ENDED)
+			{
+				startTimer = true;
+			}
+		}
+		
+		if (startTimer)
+		{
+			SetupDelayTimer();
+		}
+		else
+		{
+			TogglePlay();
+		}
+	}
+	
+	function OnPressForwardButton()
+	{
+		if (CurrentAudioSource == eAudioSource.LOCAL)
+		{
+			document.activeElement.blur();
+			AudioSource.currentTime = AudioSource.currentTime + SkipStep;
+		}
+		else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+		{
+			YTPlayer.seekTo(YTPlayer.getCurrentTime() + SkipStep);
+		}
+	}
+	
+	function OnPressBackwardButton()
+	{
+		if (CurrentAudioSource == eAudioSource.LOCAL)
+		{
+			document.activeElement.blur();
+			AudioSource.currentTime = AudioSource.currentTime - SkipStep;
+		}
+		else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+		{
+			YTPlayer.seekTo(YTPlayer.getCurrentTime() - SkipStep);
+		}
+	}
+	
+	function Countdown() 
+	{
+		if (timeLeft <= 0) 
+		{
+			clearTimeout(timerId);
+			timeLeft = 0;
+			$("#PlayTimer").text(timeLeft.toFixed(1));
+			$("#PlayTimer").addClass("bg-success");
+			$("#PlayTimer").removeClass("bg-danger");
+			TogglePlay();
+		} 
+		else 
+		{
+			$("#PlayTimer").text(timeLeft.toFixed(1));
+			timeLeft -= 0.1;
+		}
+	}
+	
+	function SetupDelayTimer()
+	{
+		timeLeft = parseFloat($("#inputPlayDelay").val());
+		if (timeLeft > 0)
+		{
+			clearTimeout(timerId);
+			timerId = setInterval(Countdown, 100);
+			$("#PlayTimer").removeClass("bg-success");
+			$("#PlayTimer").addClass("bg-danger");
+		}
+		else
+		{
+			TogglePlay();
+		}
+	}
+	
+	function TogglePlay()
+	{
+		if (CurrentAudioSource == eAudioSource.LOCAL)
+		{
+			$(".play-pause-btn")[0].click();
+		}
+		else if (CurrentAudioSource == eAudioSource.YOUTUBE)
+		{
+			if (PlayerState == eYTState.UNSTARTED || 
+				PlayerState == eYTState.PAUSED || 
+				PlayerState == eYTState.ENDED)
+			{
+				YTPlayer.playVideo();
+			}
+			else if (PlayerState == eYTState.PLAYING)
+			{
+				YTPlayer.pauseVideo();
+			}
+		}
 	}
 
 </script>
