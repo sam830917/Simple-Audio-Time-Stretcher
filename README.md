@@ -1,4 +1,4 @@
-# Simple-Audio-Time-Stretcher
+# Simple Audio Time Stretcher
 
 Audio-Time-Stretcher is a simple and efficient tool that allows you to adjust audio playback speed without changing pitch. Whether you're a musician, language learner, or need precise audio control, this tool provides an intuitive experience.  
 
